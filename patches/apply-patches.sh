@@ -32,15 +32,29 @@ apply_patch_dir() {
         pushd "$tree" > /dev/null
 
         for patch in "$patch_dir"/"$path"/*.patch; do
-            if git apply --check "$patch"; then
-                git am "$patch"
-            elif patch -f -p1 --dry-run < "$patch" > /dev/null; then
+            [ -e "$patch" ] || continue
+            patch_file="$(basename "$patch")"
+            if git apply --check "$patch" 2>/dev/null; then
+                if git am "$patch"; then
+                    printf "### PATCHED: %s \n" "$patch_file"
+                else
+                    printf "### FAILED APPLYING: %s \n" "$patch_file"
+                fi
+            elif git apply --check --reverse "$patch" 2>/dev/null; then
+                printf "### ALREADY PATCHED: %s \n" "$patch_file"
+            elif patch -f -p1 --dry-run < "$patch" > /dev/null 2>&1; then
                 git am "$patch" || true
                 patch -f -p1 < "$patch"
                 git add -u
-                git am --continue
+                if git am --continue; then
+                    printf "### PATCHED: %s \n" "$patch_file"
+                else
+                    printf "### FAILED APPLYING: %s \n" "$patch_file"
+                fi
+            elif patch -f -p1 --reverse --dry-run < "$patch" > /dev/null 2>&1; then
+                printf "### ALREADY PATCHED: %s \n" "$patch_file"
             else
-                printf "### FAILED APPLYING: %s \n" "$patch"
+                printf "### FAILED APPLYING: %s \n" "$patch_file"
             fi
         done
 
