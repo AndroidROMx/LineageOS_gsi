@@ -1,28 +1,38 @@
-From 602721661e6f77d1267f8fc07602e359c0067bea Mon Sep 17 00:00:00 2001
+From f4cd49180d2ef543ac1123a343971263deb74d3b Mon Sep 17 00:00:00 2001
 From: GSI Patch <gsi@local>
-Date: Tue, 8 Sep 2026 15:37:47 +0700
+Date: Tue, 8 Sep 2026 16:37:49 +0700
 Subject: [PATCH] Launcher3: Move Clear All button below app list
 
-Put "Clear all" into the bottom Overview actions bar (under the
-recent apps list) instead of the side/carousel ClearAllButton at
-the end of the task list. Hides the old floating button via
-OverviewState/RecentsState and routes the new bottom button
-through OverviewActionsView -> TaskOverlayFactory -> RecentsView.
+Show only "Clear all" in the bottom Overview actions bar (under
+the recent apps list). Screenshot/Split are hidden (gone), old
+side/carousel ClearAllButton is hidden via OverviewState /
+RecentsState. New bottom button is routed via OverviewActionsView
+-> TaskOverlayFactory -> RecentsView.dismissAllTasks().
 
 ---
- .../res/layout/overview_actions_container.xml      |  7 +++++++
+ .../res/layout/overview_actions_container.xml      |  9 ++++++++-
  .../uioverrides/states/OverviewState.java          |  4 ++--
  .../com/android/quickstep/TaskOverlayFactory.java  | 14 ++++++++++++++
  .../com/android/quickstep/fallback/RecentsState.kt |  1 -
  .../quickstep/views/OverviewActionsView.java       |  3 +++
  .../com/android/quickstep/views/RecentsView.java   |  4 ++++
- 6 files changed, 30 insertions(+), 3 deletions(-)
+ 6 files changed, 31 insertions(+), 4 deletions(-)
 
 diff --git a/quickstep/res/layout/overview_actions_container.xml b/quickstep/res/layout/overview_actions_container.xml
-index ce54028..1b19eb0 100644
+index ce54028..51f86af 100644
 --- a/quickstep/res/layout/overview_actions_container.xml
 +++ b/quickstep/res/layout/overview_actions_container.xml
-@@ -45,6 +45,13 @@
+@@ -35,7 +35,8 @@
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+             android:drawableStart="@drawable/ic_screenshot"
+-            android:text="@string/action_screenshot" />
++            android:text="@string/action_screenshot"
++            android:visibility="gone" />
+ 
+         <Button
+             android:id="@+id/action_split"
+@@ -45,6 +46,12 @@
              android:text="@string/action_split"
              android:visibility="gone" />
  
@@ -30,7 +40,6 @@ index ce54028..1b19eb0 100644
 +            android:id="@+id/action_clear_all"
 +            android:layout_width="wrap_content"
 +            android:layout_height="wrap_content"
-+            android:layout_marginStart="@dimen/overview_actions_button_spacing"
 +            android:text="@string/recents_clear_all" />
 +
      </LinearLayout>
