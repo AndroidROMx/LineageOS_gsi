@@ -13,15 +13,21 @@ on change and on boot, mirror the Secure setting into
 persist.sys.phh.focaltech_dt2w. The actual sysfs write is done
 privileged in phh-prop-handler (device/phh/treble), since a system_uid
 app cannot reliably write /sys sysfs nodes under SELinux.
+
+Fix OFF path: read the setting for USER_CURRENT (the foreground user
+who actually toggled Settings), override all onChange() overloads so
+the OFF event is never missed on newer APIs, and also mirror the
+TrebleApp dt2w toggle so both switches work. Boot order keeps
+Settings as the source of truth.
 ---
- app/src/main/java/me/phh/treble/app/Misc.kt | 43 +++++++++++++++++++++
- 1 file changed, 43 insertions(+)
+ app/src/main/java/me/phh/treble/app/Misc.kt | 56 +++++++++++++++++++++
+ 1 file changed, 56 insertions(+)
 
 diff --git a/app/src/main/java/me/phh/treble/app/Misc.kt b/app/src/main/java/me/phh/treble/app/Misc.kt
 index 6497567..a1b2c3d 100644
 --- a/app/src/main/java/me/phh/treble/app/Misc.kt
 +++ b/app/src/main/java/me/phh/treble/app/Misc.kt
-@@ -1,109 +1,145 @@
+@@ -1,109 +1,165 @@
  package me.phh.treble.app
  
  import android.content.Context
@@ -53,10 +59,18 @@ index 6497567..a1b2c3d 100644
 +        const val PROP = "persist.sys.phh.focaltech_dt2w"
 +        fun sync(ctxt: Context) {
 +            try {
-+                // Default ON like stock INOI; Secure.getInt throws if unset.
++                // Default ON like stock INOI when unset.
++                // Must read for USER_CURRENT: startup ctxt may run as another
++                // user, otherwise OFF by the foreground user is never seen
++                // and DT2W looks "impossible to disable".
++                val cr = ctxt.contentResolver
 +                val on = try {
-+                    Settings.Secure.getInt(ctxt.contentResolver, Settings.Secure.DOUBLE_TAP_TO_WAKE, 1) != 0
-+                } catch (e: Exception) { true }
++                    Settings.Secure.getIntForUser(cr, Settings.Secure.DOUBLE_TAP_TO_WAKE, 1, UserHandle.USER_CURRENT) != 0
++                } catch (e: Exception) {
++                    try {
++                        Settings.Secure.getInt(cr, Settings.Secure.DOUBLE_TAP_TO_WAKE, 1) != 0
++                    } catch (e2: Exception) { true }
++                }
 +                safeSetprop(PROP, if (on) "1" else "0")
 +            } catch (t: Throwable) {
 +                Log.d("PHH", "FocaltechDt2w sync failed", t)
@@ -137,6 +151,11 @@ index 6497567..a1b2c3d 100644
                  val value = sp.getBoolean(key, false)
                  val asusSvc = try { IZenMotion.getService() } catch (e: Exception) { null }
                  asusSvc?.setDclickEnable(if (value) 1 else 0)
++                // Same switch also drives FocalTech, otherwise users turn
++                // "dt2w" off in TrebleApp and DT2W stays on. Boot order
++                // below re-syncs from Settings so Settings stays source
++                // of truth after reboot.
++                safeSetprop(FocaltechDt2w.PROP, if (value) "1" else "0")
              }
          }
      }
@@ -152,16 +171,23 @@ index 6497567..a1b2c3d 100644
          spListener.onSharedPreferenceChanged(sp, MiscSettings.dt2w)
 +
 +        // Event-driven FocalTech DT2W: mirror Settings toggle into a prop.
-+        // No polling; observer fires only on change. Initial sync for boot.
++        // No polling; observer fires only on change. Initial sync for boot
++        // runs LAST so it wins over the dt2w boot-refresh above.
 +        try {
 +            FocaltechDt2w.sync(ctxt)
 +            val uri: Uri = Settings.Secure.getUriFor(Settings.Secure.DOUBLE_TAP_TO_WAKE)
-+            ctxt.contentResolver.registerContentObserver(uri, false,
-+                object : ContentObserver(Handler(Looper.getMainLooper())) {
-+                    override fun onChange(selfChange: Boolean) {
-+                        FocaltechDt2w.sync(ctxt)
-+                    }
-+                }, UserHandle.USER_ALL)
++            val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
++                override fun onChange(selfChange: Boolean) {
++                    FocaltechDt2w.sync(ctxt)
++                }
++                override fun onChange(selfChange: Boolean, uri: Uri?) {
++                    FocaltechDt2w.sync(ctxt)
++                }
++                override fun onChange(selfChange: Boolean, uri: Uri?, flags: Int) {
++                    FocaltechDt2w.sync(ctxt)
++                }
++            }
++            ctxt.contentResolver.registerContentObserver(uri, false, observer, UserHandle.USER_ALL)
 +        } catch (t: Throwable) {
 +            Log.d("PHH", "Failed to observe double_tap_to_wake", t)
 +        }

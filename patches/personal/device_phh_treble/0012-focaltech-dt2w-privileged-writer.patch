@@ -7,7 +7,8 @@ Companion to treble_app 0010. TrebleApp (system_uid) mirrors
 Settings.Secure double_tap_to_wake into persist.sys.phh.focaltech_dt2w
 via ContentObserver (no loop). This patch does the privileged side:
 vndk.rc trigger + phh-prop-handler writes 1/0 to every fts_gesture_mode
-node, plus rw-system.sh defaults the prop to 1.
+node, plus rw-system.sh defaults the prop to 1 on first boot only
+(never stomping a saved OFF choice).
 
 Note: FocalTech V4.1 (e.g. INOI A75 0x8725) rejects writes in suspend
 ("In suspend, not operation gesture mode"), but the observer fires on
@@ -54,12 +55,15 @@ index 0000000..0000000 100644
      done
  fi
  
-+# Default FocalTech DT2W ON like stock; TrebleApp observer keeps
-+# persist.sys.phh.focaltech_dt2w in sync with the Settings toggle.
-+# The vndk.rc trigger + phh-prop-handler does the actual sysfs write.
++# Default FocalTech DT2W ON like stock on first boot only; never stomp
++# a saved user choice (persist prop survives reboot). TrebleApp observer
++# keeps persist.sys.phh.focaltech_dt2w in sync with the Settings toggle
++# afterwards. The vndk.rc trigger + phh-prop-handler does the sysfs write.
 +if [ -e /sys/bus/i2c/drivers/fts_ts ] || [ -e /sys/bus/spi/drivers/fts_ts ]; then
-+    setprop persist.sys.phh.focaltech_dt2w 1
-+fi
++    if [ -z "$(getprop persist.sys.phh.focaltech_dt2w)" ]; then
++        setprop persist.sys.phh.focaltech_dt2w 1
++    fi
+ fi
 +
  if [ -n "$vndk" ] && [ "$vndk" -le 27 ] && [ -f /vendor/bin/mnld ];then
      setprop persist.sys.phh.sdk_override /vendor/bin/mnld=26
