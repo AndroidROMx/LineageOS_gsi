@@ -1,0 +1,150 @@
+From 602721661e6f77d1267f8fc07602e359c0067bea Mon Sep 17 00:00:00 2001
+From: GSI Patch <gsi@local>
+Date: Tue, 8 Sep 2026 15:37:47 +0700
+Subject: [PATCH] Launcher3: Move Clear All button below app list
+
+Put "Clear all" into the bottom Overview actions bar (under the
+recent apps list) instead of the side/carousel ClearAllButton at
+the end of the task list. Hides the old floating button via
+OverviewState/RecentsState and routes the new bottom button
+through OverviewActionsView -> TaskOverlayFactory -> RecentsView.
+
+---
+ .../res/layout/overview_actions_container.xml      |  7 +++++++
+ .../uioverrides/states/OverviewState.java          |  4 ++--
+ .../com/android/quickstep/TaskOverlayFactory.java  | 14 ++++++++++++++
+ .../com/android/quickstep/fallback/RecentsState.kt |  1 -
+ .../quickstep/views/OverviewActionsView.java       |  3 +++
+ .../com/android/quickstep/views/RecentsView.java   |  4 ++++
+ 6 files changed, 30 insertions(+), 3 deletions(-)
+
+diff --git a/quickstep/res/layout/overview_actions_container.xml b/quickstep/res/layout/overview_actions_container.xml
+index ce54028..1b19eb0 100644
+--- a/quickstep/res/layout/overview_actions_container.xml
++++ b/quickstep/res/layout/overview_actions_container.xml
+@@ -45,6 +45,13 @@
+             android:text="@string/action_split"
+             android:visibility="gone" />
+ 
++        <Button
++            android:id="@+id/action_clear_all"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:layout_marginStart="@dimen/overview_actions_button_spacing"
++            android:text="@string/recents_clear_all" />
++
+     </LinearLayout>
+ 
+     <!-- Currently, the only "group action button" is this save app pair button. If more are added,
+diff --git a/quickstep/src/com/android/launcher3/uioverrides/states/OverviewState.java b/quickstep/src/com/android/launcher3/uioverrides/states/OverviewState.java
+index 6191afd..ce27b1d 100644
+--- a/quickstep/src/com/android/launcher3/uioverrides/states/OverviewState.java
++++ b/quickstep/src/com/android/launcher3/uioverrides/states/OverviewState.java
+@@ -116,7 +116,7 @@ public class OverviewState extends LauncherState {
+ 
+     @Override
+     public int getVisibleElements(LauncherUiState launcherUiState) {
+-        int elements = CLEAR_ALL_BUTTON | OVERVIEW_ACTIONS | ADD_DESK_BUTTON;
++        int elements = OVERVIEW_ACTIONS | ADD_DESK_BUTTON;
+         boolean showFloatingSearch;
+         DeviceProfile dp = launcherUiState.getDeviceProfileRef().getValue();
+         if (dp.getDeviceProperties().isPhone()) {
+@@ -130,7 +130,7 @@ public class OverviewState extends LauncherState {
+             elements |= FLOATING_SEARCH_BAR;
+         }
+         if (launcherUiState.isSplitSelectActiveRef().getValue()) {
+-            elements &= ~CLEAR_ALL_BUTTON & ~ADD_DESK_BUTTON;
++            elements &= ~ADD_DESK_BUTTON;
+         }
+         return elements;
+     }
+diff --git a/quickstep/src/com/android/quickstep/TaskOverlayFactory.java b/quickstep/src/com/android/quickstep/TaskOverlayFactory.java
+index e0586c5..436322f 100644
+--- a/quickstep/src/com/android/quickstep/TaskOverlayFactory.java
++++ b/quickstep/src/com/android/quickstep/TaskOverlayFactory.java
+@@ -264,6 +264,13 @@ public class TaskOverlayFactory {
+             overviewPanel.initiateSplitSelect(mTaskContainer);
+         }
+ 
++        protected void clearAllTasks() {
++            RecentsView overviewPanel = mTaskContainer.getTaskView().getRecentsView();
++            // Task has already been dismissed
++            if (overviewPanel == null) return;
++            overviewPanel.dismissAllTasks();
++        }
++
+         protected void saveAppPair() {
+             GroupedTaskView taskView = (GroupedTaskView) mTaskContainer.getTaskView();
+             taskView.getRecentsView().getSplitSelectController().getAppPairsController()
+@@ -432,6 +439,10 @@ public class TaskOverlayFactory {
+                 endLiveTileMode(TaskOverlay.this::enterSplitSelect);
+             }
+ 
++            public void onClearAllTasksRequested() {
++                endLiveTileMode(TaskOverlay.this::clearAllTasks);
++            }
++
+             public void onSaveAppPair() {
+                 endLiveTileMode(TaskOverlay.this::saveAppPair);
+             }
+@@ -449,6 +460,9 @@ public class TaskOverlayFactory {
+         /** User wants to start split screen with current app. */
+         void onSplit();
+ 
++        /** User wants to clear all tasks from overview actions below the list. */
++        void onClearAllTasksRequested();
++
+         /** User wants to save an app pair with current group of apps. */
+         void onSaveAppPair();
+     }
+diff --git a/quickstep/src/com/android/quickstep/fallback/RecentsState.kt b/quickstep/src/com/android/quickstep/fallback/RecentsState.kt
+index 51008c2..ef19f7a 100644
+--- a/quickstep/src/com/android/quickstep/fallback/RecentsState.kt
++++ b/quickstep/src/com/android/quickstep/fallback/RecentsState.kt
+@@ -274,7 +274,6 @@ open class RecentsState(@JvmField val ordinal: Int, private val mFlags: Int) :
+             RecentsState(
+                 DEFAULT_STATE_ORDINAL,
+                 (FLAG_DISABLE_RESTORE or
+-                    FLAG_CLEAR_ALL_BUTTON or
+                     FLAG_OVERVIEW_ACTIONS or
+                     FLAG_SHOW_AS_GRID or
+                     FLAG_SCRIM or
+diff --git a/quickstep/src/com/android/quickstep/views/OverviewActionsView.java b/quickstep/src/com/android/quickstep/views/OverviewActionsView.java
+index 674ce5b..4665ac5 100644
+--- a/quickstep/src/com/android/quickstep/views/OverviewActionsView.java
++++ b/quickstep/src/com/android/quickstep/views/OverviewActionsView.java
+@@ -215,6 +215,7 @@ public class OverviewActionsView<T extends OverlayUICallbacks> extends FrameLayo
+         screenshotButton.setOnClickListener(this);
+         mSplitButton = findViewById(R.id.action_split);
+         mSplitButton.setOnClickListener(this);
++        findViewById(R.id.action_clear_all).setOnClickListener(this);
+         mSaveAppPairButton.setOnClickListener(this);
+     }
+ 
+@@ -237,6 +238,8 @@ public class OverviewActionsView<T extends OverlayUICallbacks> extends FrameLayo
+             mCallbacks.onScreenshot();
+         } else if (id == R.id.action_split) {
+             mCallbacks.onSplit();
++        } else if (id == R.id.action_clear_all) {
++            mCallbacks.onClearAllTasksRequested();
+         } else if (id == R.id.action_save_app_pair) {
+             mCallbacks.onSaveAppPair();
+         }
+diff --git a/quickstep/src/com/android/quickstep/views/RecentsView.java b/quickstep/src/com/android/quickstep/views/RecentsView.java
+index 111c99b..9cf47da 100644
+--- a/quickstep/src/com/android/quickstep/views/RecentsView.java
++++ b/quickstep/src/com/android/quickstep/views/RecentsView.java
+@@ -4661,6 +4661,10 @@ public abstract class RecentsView<
+         mContainer.getStatsLogManager().logger().log(LAUNCHER_TASK_CLEAR_ALL);
+     }
+ 
++    public void dismissAllTasks() {
++        dismissAllTasks(null);
++    }
++
+     private void dismissCurrentTask() {
+         TaskView taskView = getNextPageTaskView();
+         if (taskView != null) {
+-- 
+2.47.3
+
