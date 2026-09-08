@@ -16,9 +16,9 @@ toggle/boot while awake, so the write succeeds. Reg(0xD0) only becomes
 1 on next suspend, which is normal.
 ---
  phh-prop-handler.sh | 16 ++++++++++++++++
- rw-system.sh        |  7 +++++++
+ rw-system.sh        | 10 ++++++++++
  vndk.rc             |  3 +++
- 3 files changed, 26 insertions(+)
+ 3 files changed, 29 insertions(+)
 
 diff --git a/phh-prop-handler.sh b/phh-prop-handler.sh
 index 0000000..0000000 100644
@@ -51,7 +51,7 @@ diff --git a/rw-system.sh b/rw-system.sh
 index 0000000..0000000 100644
 --- a/rw-system.sh
 +++ b/rw-system.sh
-@@ -1193,6 +1193,13 @@ if [ -e /sys/bus/i2c/drivers/fts_ts ] || [ -e /sys/bus/spi/drivers/fts_ts ]; the
+@@ -1193,6 +1193,16 @@ if [ -e /sys/bus/i2c/drivers/fts_ts ] || [ -e /sys/bus/spi/drivers/fts_ts ]; the
      done
  fi
  
@@ -63,7 +63,7 @@ index 0000000..0000000 100644
 +    if [ -z "$(getprop persist.sys.phh.focaltech_dt2w)" ]; then
 +        setprop persist.sys.phh.focaltech_dt2w 1
 +    fi
- fi
++fi
 +
  if [ -n "$vndk" ] && [ "$vndk" -le 27 ] && [ -f /vendor/bin/mnld ];then
      setprop persist.sys.phh.sdk_override /vendor/bin/mnld=26
