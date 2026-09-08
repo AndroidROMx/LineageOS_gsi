@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: GSI Maintainer <gsi@localhost>
+Date: Tue, 9 Sep 2026 00:00:00 +0000
+Subject: [PATCH] core: speed up default animation durations for snappier UX
+
+Reduce base animation durations ~25-30% so the ROM feels faster
+even with animation scales left at 1x in Developer Options.
+Final duration is still base x scale, so user overrides keep working.
+
+  config_shortAnimTime      200 -> 150
+  config_mediumAnimTime     400 -> 300
+  config_longAnimTime       500 -> 350
+  config_activityShortDur   150 -> 120
+  config_activityDefaultDur 220 -> 170
+---
+ core/res/res/values/config.xml | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/core/res/res/values/config.xml b/core/res/res/values/config.xml
+index 1111111..2222222 100644
+--- a/core/res/res/values/config.xml
++++ b/core/res/res/values/config.xml
+@@ -146,17 +146,17 @@
+     <bool name="config_disableTransitionAnimation">false</bool>
+
+     <!-- The duration (in milliseconds) of a short animation. -->
+-    <integer name="config_shortAnimTime">200</integer>
++    <integer name="config_shortAnimTime">150</integer>
+
+     <!-- The duration (in milliseconds) of a medium-length animation. -->
+-    <integer name="config_mediumAnimTime">400</integer>
++    <integer name="config_mediumAnimTime">300</integer>
+
+     <!-- The duration (in milliseconds) of a long animation. -->
+-    <integer name="config_longAnimTime">500</integer>
++    <integer name="config_longAnimTime">350</integer>
+
+     <!-- The duration (in milliseconds) of the activity open/close and fragment open/close animations. -->
+-    <integer name="config_activityShortDur">150</integer>
+-    <integer name="config_activityDefaultDur">220</integer>
++    <integer name="config_activityShortDur">120</integer>
++    <integer name="config_activityDefaultDur">170</integer>
+
+     <!-- Fade out time for screen rotation -->
+     <integer name="config_screen_rotation_fade_out">116</integer>
+--
+2.53.0
