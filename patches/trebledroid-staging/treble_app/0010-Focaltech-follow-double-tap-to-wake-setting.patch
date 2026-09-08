@@ -21,9 +21,9 @@ diff --git a/app/src/main/java/me/phh/treble/app/Misc.kt b/app/src/main/java/me/
 index 6497567..a1b2c3d 100644
 --- a/app/src/main/java/me/phh/treble/app/Misc.kt
 +++ b/app/src/main/java/me/phh/treble/app/Misc.kt
-@@ -1,10 +1,15 @@
+@@ -1,109 +1,145 @@
  package me.phh.treble.app
-
+ 
  import android.content.Context
  import android.content.SharedPreferences
 +import android.database.ContentObserver
@@ -38,7 +38,7 @@ index 6497567..a1b2c3d 100644
  import androidx.preference.PreferenceManager
  import vendor.ims.zenmotion.V1_0.IZenMotion
  import vendor.mediatek.hardware.agolddaemon.IAgoldDaemon
-
+ 
  object Misc: EntryStartup {
      fun safeSetprop(key: String, value: String?) {
          try {
@@ -48,7 +48,7 @@ index 6497567..a1b2c3d 100644
              Log.d("PHH", "Failed setting prop $key", e)
          }
      }
-
+ 
 +    object FocaltechDt2w {
 +        const val PROP = "persist.sys.phh.focaltech_dt2w"
 +        fun sync(ctxt: Context) {
@@ -115,7 +115,7 @@ index 6497567..a1b2c3d 100644
                      safeSetprop("ro.lmk.critical_upgrade", "")
                  }
              }
-
+ 
              MiscSettings.disableExpensiveRenderingMode -> {
                  val value = sp.getBoolean(key, false)
                  safeSetprop("persist.sys.phh.disable_expensive_rendering_mode", if (value) "1" else "0")
@@ -140,12 +140,12 @@ index 6497567..a1b2c3d 100644
              }
          }
      }
-
+ 
      override fun startup(ctxt: Context) {
          Log.d("PHH", "Loading Misc fragment")
          val sp = PreferenceManager.getDefaultSharedPreferences(ctxt)
          sp.registerOnSharedPreferenceChangeListener(spListener)
-
+ 
          // Refresh on boot
          spListener.onSharedPreferenceChanged(sp, MiscSettings.storageFUSE)
          spListener.onSharedPreferenceChanged(sp, MiscSettings.unihertzdt2w)
