@@ -1,0 +1,92 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Muse Spark <muse-spark@local>
+Date: Tue, 9 Sep 2026 00:00:00 +0300
+Subject: [PATCH 12/10] focaltech: privileged dt2w writer for TrebleApp observer
+
+Companion to treble_app 0010. TrebleApp (system_uid) mirrors
+Settings.Secure double_tap_to_wake into persist.sys.phh.focaltech_dt2w
+via ContentObserver (no loop). This patch does the privileged side:
+vndk.rc trigger + phh-prop-handler writes 1/0 to every fts_gesture_mode
+node, plus rw-system.sh caches the node path and defaults the prop to 1.
+
+Note: FocalTech V4.1 (e.g. INOI A75 0x8725) rejects writes in suspend
+("In suspend, not operation gesture mode"), but the observer fires on
+toggle/boot while awake, so the write succeeds. Reg(0xD0) only becomes
+1 on next suspend, which is normal.
+---
+ phh-prop-handler.sh | 16 ++++++++++++++++
+ rw-system.sh        |  8 ++++++++
+ vndk.rc             |  3 +++
+ 3 files changed, 27 insertions(+)
+
+diff --git a/phh-prop-handler.sh b/phh-prop-handler.sh
+index 84dc85d..b2c3d4e 100644
+--- a/phh-prop-handler.sh
++++ b/phh-prop-handler.sh
+@@ -134,6 +134,22 @@ if [ "$1" == "sys.phh.oplus.fppress" ]; then
+     exit
+ fi
+
++if [ "$1" == "persist.sys.phh.focaltech_dt2w" ]; then
++    if [[ "$prop_value" != "0" && "$prop_value" != "1" ]]; then
++        exit 1
++    fi
++    for f in $(find /sys -name fts_gesture_mode 2>/dev/null); do
++        if [ -w "$f" ]; then
++            echo "$prop_value" > "$f" 2>/dev/null || true
++        fi
++    done
++    node="$(getprop persist.sys.phh.focaltech_node 2>/dev/null)"
++    if [ -n "$node" ] && [ -w "$node" ]; then
++        echo "$prop_value" > "$node" 2>/dev/null || true
++    fi
++    exit
++fi
++
+ if [ "$1" == "persist.sys.phh.securize" ]; then
+     if [[ "$prop_value" != "0" && "$prop_value" != "1" ]]; then
+         exit 1
+     fi
+     if [[ "$prop_value" == 1 ]]; then
+         rm -f /metadata/securize_disable
+     else
+         touch /metadata/securize_disable
+     fi
+ fi
+
+diff --git a/rw-system.sh b/rw-system.sh
+index 592e952..c3d4e5f 100644
+--- a/rw-system.sh
++++ b/rw-system.sh
+@@ -139,6 +139,14 @@ if [ -e /sys/bus/i2c/drivers/fts_ts ] || [ -e /sys/bus/spi/drivers/fts_ts ]; the
+     for f in $(find /sys -name fts_gesture_mode 2>/dev/null);do
+         setprop persist.sys.phh.focaltech_node "$f"
+     done
+ fi
++
++# Default FocalTech DT2W ON like stock; TrebleApp observer keeps
++# persist.sys.phh.focaltech_dt2w in sync with the Settings toggle.
++# The vndk.rc trigger + phh-prop-handler does the actual sysfs write.
++if [ -e /sys/bus/i2c/drivers/fts_ts ] || [ -e /sys/bus/spi/drivers/fts_ts ]; then
++    setprop persist.sys.phh.focaltech_dt2w 1
++    for f in $(find /sys -name fts_gesture_mode 2>/dev/null);do
++        setprop persist.sys.phh.focaltech_node "$f"
++    done
++fi
+ 
+ if [ -n "$vndk" ] && [ "$vndk" -le 27 ] && [ -f /vendor/bin/mnld ];then
+diff --git a/vndk.rc b/vndk.rc
+index e3e6d11..f4a5b6c 100644
+--- a/vndk.rc
++++ b/vndk.rc
+@@ -44,6 +44,9 @@ on property:persist.sys.phh.oppo.gaming_mode=*
+ on property:persist.sys.phh.securize=*
+     exec u:r:phhsu_daemon:s0 root -- /system/bin/phh-prop-handler.sh "persist.sys.phh.securize"
+
++on property:persist.sys.phh.focaltech_dt2w=*
++    exec u:r:phhsu_daemon:s0 root -- /system/bin/phh-prop-handler.sh "persist.sys.phh.focaltech_dt2w"
++
+ on property:persist.sys.phh.oppo.usbotg=*
+     exec u:r:phhsu_daemon:s0 root -- /system/bin/phh-prop-handler.sh "persist.sys.phh.oppo.usbotg"
+--
+2.54.0
