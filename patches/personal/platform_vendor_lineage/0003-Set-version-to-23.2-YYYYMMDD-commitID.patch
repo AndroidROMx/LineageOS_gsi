@@ -1,0 +1,51 @@
+diff --git a/patches/personal/platform_vendor_lineage/0003-Set-version-to-23.2-YYYYMMDD-commitID.patch b/patches/personal/platform_vendor_lineage/0003-Set-version-to-23.2-YYYYMMDD-commitID.patch
+new file mode 100644
+index 0000000..249b3d3
+--- /dev/null
++++ b/patches/personal/platform_vendor_lineage/0003-Set-version-to-23.2-YYYYMMDD-commitID.patch
+@@ -0,0 +1,45 @@
++From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
++From: Sunu Aziz Rahayu <sunuazizrahayu@gmail.com>
++Date: Wed, 9 Sep 2026 00:42:14 +0700
++Subject: [PATCH] Set version to 23.2-YYYYMMDD-commitID
++
++Use plain YYYYMMDD date plus the short commit hash of the
++LineageOS_gsi repo, so the final version is exactly:
++
++  23.2-YYYYMMDD-commitID
++
++e.g. 23.2-20260908-f38a7b4
++
++---
++ config/version.mk | 10 ++++++++--
++ 1 file changed, 8 insertions(+), 2 deletions(-)
++
++diff --git a/config/version.mk b/config/version.mk
++index f0a83e4..f3e8987 100644
++--- a/config/version.mk
+++++ b/config/version.mk
++@@ -29,13 +29,19 @@ ifeq ($(LINEAGE_BUILDTYPE), UNOFFICIAL)
++     endif
++ endif
++ 
++-LINEAGE_VERSION_SUFFIX := $(LINEAGE_BUILD_DATE)-$(LINEAGE_BUILDTYPE)$(LINEAGE_EXTRAVERSION)-$(LINEAGE_BUILD)
+++# GSI commit ID from the LineageOS_gsi repo (cloned inside the tree).
+++# Falls back to "unknown" when the dir/git is unavailable (e.g. Jenkins).
+++GSI_COMMIT_ID := $(shell git -C LineageOS_gsi rev-parse --short HEAD 2>/dev/null || git -C $(TOP)/LineageOS_gsi rev-parse --short HEAD 2>/dev/null || echo unknown)
+++
+++# Revisi build: YYYYMMDD-commitID
+++LINEAGE_VERSION_SUFFIX := $(LINEAGE_BUILD_DATE)-$(GSI_COMMIT_ID)
++ 
++ # Internal version
+++# Result: 23.2-YYYYMMDD-commitID
++ LINEAGE_VERSION := $(PRODUCT_VERSION_MAJOR).$(PRODUCT_VERSION_MINOR)-$(LINEAGE_VERSION_SUFFIX)
++ 
++ # Display version
++-LINEAGE_DISPLAY_VERSION := $(PRODUCT_VERSION_MAJOR)-$(LINEAGE_VERSION_SUFFIX)
+++LINEAGE_DISPLAY_VERSION := $(LINEAGE_VERSION)
++ 
++ # LineageOS version properties
++ PRODUCT_PRODUCT_PROPERTIES += \
++-- 
++2.47.3
++
