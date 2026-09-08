@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: GSI Patch <gsi@local>
+Date: Tue, 9 Sep 2026 00:00:00 +0700
+Subject: [PATCH] Launcher3: Enable double tap to sleep by default
+
+Upstream LineageOS already supports double-tap empty space on the
+home screen to sleep (WorkspaceTouchListener -> QuickstepLauncher
+-> SystemUiProxy), plus double-tap on status bar and anywhere on
+the lock screen. The launcher toggle defaults to off, so users
+think sleep only works from the navbar.
+
+Default it to on for GSI so home-screen DT2S behaves like the
+lock screen out of the box. Users can still turn it off in
+Home Settings > Double tap to sleep.
+
+---
+ res/xml/launcher_preferences.xml          | 2 +-
+ src/com/android/launcher3/LauncherPrefs.kt | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/res/xml/launcher_preferences.xml b/res/xml/launcher_preferences.xml
+--- a/res/xml/launcher_preferences.xml
++++ b/res/xml/launcher_preferences.xml
+@@ -28,7 +28,7 @@
+         android:summaryOff="@string/settings_lock_layout_summary_off" />
+
+     <SwitchPreferenceCompat
+-        android:defaultValue="false"
++        android:defaultValue="true"
+         android:key="pref_sleep_gesture"
+         android:persistent="true"
+         android:title="@string/pref_sleep_gesture_title"
+diff --git a/src/com/android/launcher3/LauncherPrefs.kt b/src/com/android/launcher3/LauncherPrefs.kt
+--- a/src/com/android/launcher3/LauncherPrefs.kt
++++ b/src/com/android/launcher3/LauncherPrefs.kt
+@@ -253,7 +253,7 @@
+         @JvmField val WORKSPACE_LOCK = backedUpItem("pref_workspace_lock", false)
+         @JvmField val ALLAPPS_THEMED_ICONS = backedUpItem("pref_allapps_themed_icons", false)
+         @JvmField val DRAWER_OPEN_KEYBOARD = backedUpItem("pref_drawer_open_keyboard", false)
+-        @JvmField val SLEEP_GESTURE = backedUpItem("pref_sleep_gesture", false)
++        @JvmField val SLEEP_GESTURE = backedUpItem("pref_sleep_gesture", true)
+         @JvmField
+         val PROMISE_ICON_IDS = nonRestorableItem(InstallSessionHelper.PROMISE_ICON_IDS, "")
+         @JvmField val WORK_EDU_STEP = backedUpItem("showed_work_profile_edu", 0)
+--
+2.47.3
