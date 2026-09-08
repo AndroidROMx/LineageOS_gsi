@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MisterZtr <andey2004586@gmail.com>
+Date: Tue, 9 Sep 2026 00:00:00 +0300
+Subject: [PATCH 11/10] overlay: Enable tap to wake in Settings
+
+GSI menyembunyikan toggle "Tap to wake" di Settings > Display
+karena config_supportDoubleTapWake default-nya false.
+Aktifkan via file overlay terpisah supaya pengaturannya muncul
+tanpa menyentuh config.xml (menghindari konflik dengan patch
+0008 dan perubahan upstream).
+Nilai aktualnya diteruskan ke Power HAL via
+Settings.Secure double_tap_to_wake, jadi fungsi sebenarnya
+tetap mengikuti dukungan kernel/vendor (untuk node legacy
+Xiaomi/Oppo/Vsmart tetap pakai toggle dt2w di TrebleApp).
+---
+ .../base/core/res/res/values/config_tap_to_wake.xml | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+ create mode 100644 overlay/frameworks/base/core/res/res/values/config_tap_to_wake.xml
+
+diff --git a/overlay/frameworks/base/core/res/res/values/config_tap_to_wake.xml b/overlay/frameworks/base/core/res/res/values/config_tap_to_wake.xml
+new file mode 100644
+index 0000000..8f9b6c9
+--- /dev/null
++++ b/overlay/frameworks/base/core/res/res/values/config_tap_to_wake.xml
+@@ -0,0 +1,9 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!--
++SPDX-FileCopyrightText: The LineageOS Project
++SPDX-License-Identifier: Apache-2.0
++-->
++<resources>
++    <!-- Enable Tap to wake toggle in Settings > Display for GSI -->
++    <bool name="config_supportDoubleTapWake">true</bool>
++</resources>
+--
+2.54.0
+
