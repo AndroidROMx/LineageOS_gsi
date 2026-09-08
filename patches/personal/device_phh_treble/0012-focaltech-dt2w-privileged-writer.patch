@@ -15,16 +15,15 @@ toggle/boot while awake, so the write succeeds. Reg(0xD0) only becomes
 1 on next suspend, which is normal.
 ---
  phh-prop-handler.sh | 16 ++++++++++++++++
- rw-system.sh        |  6 ++++++
+ rw-system.sh        |  7 +++++++
  vndk.rc             |  3 +++
- 3 files changed, 25 insertions(+)
+ 3 files changed, 26 insertions(+)
 
 diff --git a/phh-prop-handler.sh b/phh-prop-handler.sh
 index 0000000..0000000 100644
 --- a/phh-prop-handler.sh
 +++ b/phh-prop-handler.sh
-@@ -150,16 +150,32 @@
-     echo cc${prop_value} > /proc/gesture_function
+@@ -177,6 +177,22 @@ if [ "$1" == "persist.sys.phh.transsion.dt2w" ]; then
      exit
  fi
  
@@ -47,41 +46,30 @@ index 0000000..0000000 100644
  if [ "$1" == "persist.sys.phh.allow_binder_thread_on_incoming_calls" ]; then
      if [[ "$prop_value" != "0" && "$prop_value" != "1" ]]; then
          exit 1
-     fi
-     if [[ "$prop_value" == 1 ]];then
-         resetprop_phh ro.telephony.block_binder_thread_on_incoming_calls false
-     else
-         resetprop_phh --delete ro.telephony.block_binder_thread_on_incoming_calls
-     fi
-     exit
- fi
- 
 diff --git a/rw-system.sh b/rw-system.sh
 index 0000000..0000000 100644
 --- a/rw-system.sh
 +++ b/rw-system.sh
-@@ -1111,10 +1111,16 @@
- [ -d /mnt/vendor/persist ] && mount /mnt/vendor/persist /persist
+@@ -1193,6 +1193,13 @@ if [ -e /sys/bus/i2c/drivers/fts_ts ] || [ -e /sys/bus/spi/drivers/fts_ts ]; the
+     done
+ fi
  
- for f in $(find /sys -name fts_gesture_mode);do
-     setprop persist.sys.phh.focaltech_node "$f"
- done
 +# Default FocalTech DT2W ON like stock; TrebleApp observer keeps
 +# persist.sys.phh.focaltech_dt2w in sync with the Settings toggle.
 +# The vndk.rc trigger + phh-prop-handler does the actual sysfs write.
 +if [ -e /sys/bus/i2c/drivers/fts_ts ] || [ -e /sys/bus/spi/drivers/fts_ts ]; then
 +    setprop persist.sys.phh.focaltech_dt2w 1
 +fi
- 
- if [ "$vndk" -le 27 ] && [ -f /vendor/bin/mnld ];then
++
+ if [ -n "$vndk" ] && [ "$vndk" -le 27 ] && [ -f /vendor/bin/mnld ];then
      setprop persist.sys.phh.sdk_override /vendor/bin/mnld=26
  fi
- 
 diff --git a/vndk.rc b/vndk.rc
 index 0000000..0000000 100644
 --- a/vndk.rc
 +++ b/vndk.rc
-@@ -48,4 +48,7 @@
+@@ -59,6 +59,9 @@ on property:persist.sys.phh.transsion.dt2w=*
+ on property:persist.sys.phh.xiaomi.dt2w=*
      exec u:r:phhsu_daemon:s0 root -- /system/bin/phh-prop-handler.sh "persist.sys.phh.xiaomi.dt2w"
  
 +on property:persist.sys.phh.focaltech_dt2w=*
@@ -89,5 +77,6 @@ index 0000000..0000000 100644
 +
  on property:persist.sys.phh.allow_binder_thread_on_incoming_calls=*
      exec u:r:phhsu_daemon:s0 root -- /system/bin/phh-prop-handler.sh "persist.sys.phh.allow_binder_thread_on_incoming_calls"
+ 
 --
 2.54.0
