@@ -20,7 +20,7 @@ repo init -u https://github.com/LineageOS/android.git -b lineage-23.2 --git-lfs
 
 ### Clone the Manifest to add necessary dependencies for gsi:
  
-    git clone https://github.com/MisterZtr/treble_manifest.git .repo/local_manifests -b lineage-23.2
+    git clone https://github.com/AndroidROMx/treble_manifest.git .repo/local_manifests -b lineage-23.2
   
 ### Afterwards, sync the source by running this command:
 
@@ -40,6 +40,11 @@ bash LineageOS_gsi/patches/apply-patches.sh .
 treble_app is now used from your compiled version.  
 First, make sure that Java 17 is set as your default. How to do this on [Arch Linux](https://wiki.archlinux.org/title/Java#List_compatible_Java_environments_installed)  
 The compilation itself,
+
+or use
+```
+wget https://github.com/AndroidROMx/vendor_hardware_overlay/raw/refs/heads/main/TrebleApp/app.apk -O treble_app/TrebleApp.apk
+```
 
 ### Use ccache to speed up Android rebuilds
 
@@ -96,8 +101,12 @@ If you want to compress the build, i recommend use [7-zip](https://aur.archlinux
 In rom folder,
 
    ```
-cd out/target/product/tdgsi_arm64_ab
+cd out/target/product/generic_arm64/
 7z a system.img.xz "system.img"
+   ```
+or
+   ```
+zip -j ~/lineage-gsi.zip out/target/product/generic_arm64/system.img
    ```
 
 ### Troubleshoot
