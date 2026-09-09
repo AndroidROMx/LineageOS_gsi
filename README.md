@@ -1,4 +1,5 @@
-English | [Русский](README-RU.md)
+# LineageOS GSI
+
 ### To get started with building the unofficial LineageOS 23.2 GSI together with the patches,
 You'll need to get familiar with [Git and Repo](https://source.android.com/source/using-repo.html) as well as [How to build a GSI](https://github.com/phhusson/treble_experimentations/wiki/How-to-build-a-GSI%3F).
 
@@ -58,6 +59,7 @@ export CCACHE_MAXSIZE=50G # 50 GB
 
 ### Building Android 
 
+####
 VANILLA version with erofs:
 
  ```
@@ -71,7 +73,7 @@ or
  . build/envsetup.sh; breakfast lineage_arm64_bvNE-bp4a-userdebug; make systemimage -j$(nproc --all); LINEAGE_VERSION=$(get_build_var LINEAGE_VERSION); ZIP_NAME="lineage_${LINEAGE_VERSION}_arm64_userdebug.zip"; zip -j ~/public/${ZIP_NAME} out/target/product/generic_arm64/system.img
  ```
  
-
+####
 VANILLA version with ext4:
 
  ```
@@ -85,7 +87,7 @@ or
  . build/envsetup.sh; breakfast lineage_arm64_bvN4-bp4a-userdebug; make systemimage -j$(nproc --all); LINEAGE_VERSION=$(get_build_var LINEAGE_VERSION); ZIP_NAME="lineage_${LINEAGE_VERSION}_arm64_userdebug.zip"; zip -j ~/public/${ZIP_NAME} out/target/product/generic_arm64/system.img
  ```
 
- 
+####
 GAPPS version with erofs:
 
  ```
@@ -99,7 +101,7 @@ make systemimage -j$(nproc --all)
  . build/envsetup.sh; breakfast lineage_arm64_bgNE-bp4a-userdebug; make systemimage -j$(nproc --all); LINEAGE_VERSION=$(get_build_var LINEAGE_VERSION); ZIP_NAME="lineage_${LINEAGE_VERSION}_arm64_userdebug.zip"; zip -j ~/public/${ZIP_NAME} out/target/product/generic_arm64/system.img
  ```
  
-
+####
 GAPPS version with ext4:
 
  ```
