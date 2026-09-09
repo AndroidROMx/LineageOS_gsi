@@ -14,7 +14,9 @@
 # tertimpa variant berikutnya (semua variant memakai
 # out/target/product/generic_arm64/system.img yang sama).
 
-set -u
+# NOTE: sengaja TANPA 'set -u'/'set -e' karena build/envsetup.sh +
+# breakfast/make AOSP tidak nounset-safe (error 'TOP: unbound variable')
+# dan kita ingin lanjut ke variant berikut saat satu variant gagal.
 set -o pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -213,11 +215,16 @@ fi
 cd "$ANDROID_ROOT"
 
 # envsetup harus di-source di shell ini (menyediakan breakfast & get_build_var)
+# Paksa matikan nounset/errexit di sini: envsetup AOSP memakai variabel
+# yang belum di-set (mis. $TOP) sehingga gagal dengan 'unbound variable'
+# kalau opsi tersebut aktif (bisa terbawa dari environment pemanggil).
+set +u
+set +e
 if [[ $DRY_RUN -eq 1 ]]; then
     echo "+ . build/envsetup.sh"
 else
     # shellcheck disable=SC1091
-    . build/envsetup.sh
+    . build/envsetup.sh || { echo "ERROR: gagal source build/envsetup.sh" >&2; exit 1; }
 fi
 
 declare -a OK=()
