@@ -1,14 +1,16 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Sunu Aziz Rahayu <sunuazizrahayu@gmail.com>
 Date: Wed, 9 Sep 2026 00:42:14 +0700
-Subject: [PATCH] Set version to 23.2-YYYYMMDD-commitID
+Subject: [PATCH] Keep buildtype, append GSI commit ID to version
 
-Use plain YYYYMMDD date plus the short commit hash of the
-LineageOS_gsi repo, so the final version is exactly:
+Use plain YYYYMMDD date plus buildtype plus the short commit hash
+of the LineageOS_gsi repo, so the final version is:
 
-  23.2-YYYYMMDD-commitID
+  23.2-YYYYMMDD-BUILDTYPE-EXTRAVERSION-BUILD-commitID
 
-e.g. 23.2-20260908-f38a7b4
+e.g. 23.2-20260908-VANILLA-EROFS-GSI-f38a7b4
+e.g. 23.2-20260908-VANILLA-EXT4-GSI-f38a7b4
+e.g. 23.2-20260908-GAPPS-EROFS-GSI-f38a7b4
 
 ---
  config/version.mk | 10 ++++++++--
@@ -26,11 +28,11 @@ diff --git a/config/version.mk b/config/version.mk
 +# Falls back to "unknown" when the dir/git is unavailable (e.g. Jenkins).
 +GSI_COMMIT_ID := $(shell git -C LineageOS_gsi rev-parse --short HEAD 2>/dev/null || git -C $(TOP)/LineageOS_gsi rev-parse --short HEAD 2>/dev/null || echo unknown)
 +
-+# Revisi build: YYYYMMDD-commitID
-+LINEAGE_VERSION_SUFFIX := $(LINEAGE_BUILD_DATE)-$(GSI_COMMIT_ID)
++# Revisi build: YYYYMMDD-BUILDTYPE-EXTRAVERSION-BUILD-commitID (cuma nambah commit ID)
++LINEAGE_VERSION_SUFFIX := $(LINEAGE_BUILD_DATE)-$(LINEAGE_BUILDTYPE)$(LINEAGE_EXTRAVERSION)-$(LINEAGE_BUILD)-$(GSI_COMMIT_ID)
 
  # Internal version
-+# Result: 23.2-YYYYMMDD-commitID
++# Result: 23.2-YYYYMMDD-VANILLA-EROFS-GSI-commitID, e.g. 23.2-20260908-VANILLA-EROFS-GSI-f38a7b4
  LINEAGE_VERSION := $(PRODUCT_VERSION_MAJOR).$(PRODUCT_VERSION_MINOR)-$(LINEAGE_VERSION_SUFFIX)
 
  # Display version
