@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: GSI Patch <gsi@local>
+Date: Tue, 9 Sep 2026 00:00:00 +0700
+Subject: [PATCH] Launcher3: Lower workspace page indicator so it doesn't cover
+ app labels
+
+The page-indicator dots container sits right above the hotseat
+(bottomMargin = hotseatBarSizePx). On dense grids the dots overlap
+the bottom-row app labels while swiping between pages.
+
+Shift the container down by 8dp so there is a visible gap between
+the labels and the dots. The value is exposed as a dimen so it can
+be tuned per device without touching Java.
+
+---
+ res/values/dimens.xml                  | 3 +++
+ src/com/android/launcher3/Workspace.java | 5 ++++-
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/res/values/dimens.xml b/res/values/dimens.xml
+index 1111111..2222222 100644
+--- a/res/values/dimens.xml
++++ b/res/values/dimens.xml
+@@ -47,6 +47,9 @@
+     <dimen name="workspace_page_indicator_height">24dp</dimen>
+     <dimen name="workspace_page_indicator_line_height">1dp</dimen>
+     <dimen name="workspace_page_indicator_overlap_workspace">0dp</dimen>
++    <!-- How far to shift the page-indicator dots down so they don't
++         cover the bottom-row app labels while swiping. -->
++    <dimen name="workspace_page_indicator_shift_down">8dp</dimen>
+
+     <!-- Drop target bar -->
+     <dimen name="dynamic_grid_drop_target_size">56dp</dimen>
+diff --git a/src/com/android/launcher3/Workspace.java b/src/com/android/launcher3/Workspace.java
+index 3333333..4444444 100644
+--- a/src/com/android/launcher3/Workspace.java
++++ b/src/com/android/launcher3/Workspace.java
+@@ -413,7 +413,9 @@
+         } else {
+             lp.leftMargin = lp.rightMargin = 0;
+             lp.gravity = Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM;
+-            lp.bottomMargin = grid.hotseatBarSizePx;
++            int shiftDown = getResources().getDimensionPixelSize(
++                    R.dimen.workspace_page_indicator_shift_down);
++            lp.bottomMargin = Math.max(0, grid.hotseatBarSizePx - shiftDown);
+         }
+         pageIndicatorContainer.setLayoutParams(lp);
+     }
+-- 
+2.47.3
